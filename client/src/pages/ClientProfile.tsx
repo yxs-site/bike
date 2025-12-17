@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { Loader2, MapPin, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { isValidCEP, formatCEP } from "@shared/validators";
 import { toast } from "sonner";
 
 export default function ClientProfile() {
@@ -64,15 +65,18 @@ export default function ClientProfile() {
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isValidCEP(addressForm.cep)) {
+      toast.error("CEP inválido");
+      return;
+    }
+
+    // Adicionar outras validações de campos obrigatórios aqui se necessário
+
     createAddress.mutate(addressForm);
   };
 
-  const formatCEP = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .replace(/(-\d{3})\d+?$/, '$1');
-  };
+
 
   if (clientLoading) {
     return (
@@ -82,25 +86,25 @@ export default function ClientProfile() {
     );
   }
 
-  if (!client) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Perfil não encontrado</CardTitle>
-            <CardDescription>
-              Você ainda não completou seu cadastro como cliente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.href = "/register-client"} className="w-full">
-              Completar Cadastro
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    if (!client) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Card className="max-w-md">
+            <CardHeader>
+              <CardTitle>Perfil não encontrado</CardTitle>
+              <CardDescription>
+                Você ainda não completou seu cadastro como cliente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = "/register-client"} className="w-full">
+                Completar Cadastro
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,7 +183,10 @@ export default function ClientProfile() {
                     <Input
                       id="cep"
                       value={addressForm.cep}
-                      onChange={(e) => setAddressForm({ ...addressForm, cep: formatCEP(e.target.value) })}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "");
+                        setAddressForm({ ...addressForm, cep: formatCEP(cleaned) });
+                      }}
                       placeholder="00000-000"
                       maxLength={9}
                       required

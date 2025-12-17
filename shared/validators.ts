@@ -167,3 +167,29 @@ export function formatPhone(phone: string): string {
 
 // Exportar a função de limpeza para uso interno ou em outros módulos
 export { cleanNumber };
+
+// --- Validação de CEP ---
+
+/**
+ * Valida o formato brasileiro de CEP (8 dígitos).
+ * @param cep O CEP a ser validado (pode estar formatado ou não).
+ * @returns true se o CEP for válido, false caso contrário.
+ */
+export function isValidCEP(cep: string): boolean {
+  const cleanedCEP = cleanNumber(cep);
+  // O CEP deve ter exatamente 8 dígitos
+  return cleanedCEP.length === 8;
+}
+
+/**
+ * Formata um CEP (apenas dígitos) para o padrão XXXXX-XXX.
+ * @param cep O CEP a ser formatado (apenas dígitos).
+ * @returns O CEP formatado.
+ */
+export function formatCEP(cep: string): string {
+  const cleanedCEP = cleanNumber(cep).substring(0, 8);
+  if (cleanedCEP.length === 8) {
+    return cleanedCEP.replace(/(\d{5})(\d{3})/, "$1-$2");
+  }
+  return cleanedCEP;
+}

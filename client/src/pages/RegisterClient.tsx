@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import { Camera, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { isValidCPF, isValidPhone, formatCPF, formatPhone } from "@shared/validators";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -54,6 +55,16 @@ export default function RegisterClient() {
       return;
     }
 
+    if (!isValidCPF(cpf)) {
+      toast.error("CPF inválido");
+      return;
+    }
+
+    if (!isValidPhone(phone)) {
+      toast.error("Telefone inválido");
+      return;
+    }
+
     createClient.mutate({
       cpf,
       phone,
@@ -61,22 +72,7 @@ export default function RegisterClient() {
     });
   };
 
-  const formatCPF = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-      .replace(/(-\d{2})\d+?$/, '$1');
-  };
 
-  const formatPhone = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2')
-      .replace(/(-\d{4})\d+?$/, '$1');
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
@@ -130,7 +126,10 @@ export default function RegisterClient() {
                 type="text"
                 placeholder="000.000.000-00"
                 value={cpf}
-                onChange={(e) => setCpf(formatCPF(e.target.value))}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/\D/g, "");
+                  setCpf(formatCPF(cleaned));
+                }}
                 maxLength={14}
                 required
               />
@@ -144,7 +143,10 @@ export default function RegisterClient() {
                 type="text"
                 placeholder="(00) 00000-0000"
                 value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/\D/g, "");
+                  setPhone(formatPhone(cleaned));
+                }}
                 maxLength={15}
                 required
               />

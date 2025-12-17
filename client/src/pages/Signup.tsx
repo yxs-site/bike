@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Bike } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { isValidCPF, isValidPhone, formatCPF, formatPhone, isValidEmail } from "@shared/validators";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -35,26 +36,7 @@ export default function Signup() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const formatCPF = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 11) {
-      return cleaned
-        .replace(/(\d{3})(\d)/, "$1.$2")
-        .replace(/(\d{3})(\d)/, "$1.$2")
-        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    }
-    return value;
-  };
 
-  const formatPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 11) {
-      return cleaned
-        .replace(/(\d{2})(\d)/, "($1) $2")
-        .replace(/(\d{5})(\d)/, "$1-$2");
-    }
-    return value;
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +57,17 @@ export default function Signup() {
       return;
     }
 
-    // Remover formatação do CPF para enviar
-    const cpfClean = formData.cpf.replace(/\D/g, "");
-    if (cpfClean.length !== 11) {
+    if (!isValidEmail(formData.email)) {
+      toast.error("Email inválido");
+      return;
+    }
+
+    if (!isValidPhone(formData.phone)) {
+      toast.error("Telefone inválido");
+      return;
+    }
+
+    if (!isValidCPF(formData.cpf)) {
       toast.error("CPF inválido");
       return;
     }
@@ -145,7 +135,8 @@ export default function Signup() {
                 placeholder="(00) 00000-0000"
                 value={formData.phone}
                 onChange={(e) => {
-                  const formatted = formatPhone(e.target.value);
+                  const cleaned = e.target.value.replace(/\D/g, "");
+                  const formatted = formatPhone(cleaned);
                   setFormData((prev) => ({ ...prev, phone: formatted }));
                 }}
                 disabled={isLoading}
@@ -160,7 +151,8 @@ export default function Signup() {
                 placeholder="000.000.000-00"
                 value={formData.cpf}
                 onChange={(e) => {
-                  const formatted = formatCPF(e.target.value);
+                  const cleaned = e.target.value.replace(/\D/g, "");
+                  const formatted = formatCPF(cleaned);
                   setFormData((prev) => ({ ...prev, cpf: formatted }));
                 }}
                 disabled={isLoading}
