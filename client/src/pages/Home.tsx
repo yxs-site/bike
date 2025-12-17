@@ -1,194 +1,209 @@
-import { RequirementCard } from "@/components/RequirementCard";
-import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { categories, functionalRequirements, nonFunctionalRequirements } from "@/lib/data";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { BarChart3, Download, FileText, Filter, LayoutGrid, Search, Share2 } from "lucide-react";
-import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
+import { Bike, Loader2, ShoppingCart, User, Wrench } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { user, loading, isAuthenticated, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const filteredReqs = functionalRequirements.filter((req) => {
-    const matchesCategory = selectedCategory === "Todos" || req.category === selectedCategory;
-    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          req.id.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const { data: client, isLoading: clientLoading } = trpc.clients.getMyProfile.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
 
-  const stats = {
-    total: functionalRequirements.length,
-    new: functionalRequirements.filter(r => r.isNew).length,
-    rnf: nonFunctionalRequirements.length
-  };
+  if (loading || clientLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bike className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-3xl">EcoBike System</CardTitle>
+            <CardDescription className="text-base">
+              Sistema de Gestão Integrada: E-commerce, Loja Física e Mobilidade Urbana
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => window.location.href = getLoginUrl()}
+              className="w-full"
+              size="lg"
+            >
+              Entrar no Sistema
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Faça login para acessar o sistema
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Usuário autenticado mas sem perfil de cliente
+  if (!client) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle>Bem-vindo, {user?.name}!</CardTitle>
+            <CardDescription>
+              Complete seu cadastro para começar a usar o EcoBike System
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => setLocation("/register-client")}
+              className="w-full"
+              size="lg"
+            >
+              Completar Cadastro
+            </Button>
+            <Button
+              onClick={() => logout()}
+              variant="outline"
+              className="w-full"
+            >
+              Sair
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Usuário autenticado com perfil completo
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
-      {/* Header com efeito de vidro */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
-              <LayoutGrid className="h-5 w-5 text-primary" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">Requisitos<span className="text-primary">Viewer</span></span>
+            <Bike className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">EcoBike System</span>
           </div>
-          
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                v1.2 Revisada
-              </span>
-            </div>
-            <Button variant="outline" size="sm" className="gap-2 hidden sm:flex">
-              <Download className="h-4 w-4" />
-              Exportar PDF
+            <span className="text-sm text-muted-foreground hidden sm:inline">
+              {user?.name}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setLocation("/profile")}>
+              <User className="mr-2 h-4 w-4" />
+              Meu Perfil
             </Button>
-            <Button size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Compartilhar
+            <Button variant="ghost" size="sm" onClick={() => logout()}>
+              Sair
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container py-8 space-y-8">
+      <main className="container py-12">
         {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-b from-secondary/30 to-background p-8 md:p-12">
-          <div className="absolute top-0 right-0 -mt-20 -mr-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl"></div>
-          
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <Badge variant="secondary" className="mb-2">Documentação de Projeto</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/60">
-              Sistema de Gestão Integrada
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Explore os requisitos funcionais e não funcionais do ecossistema de e-commerce, loja física e mobilidade urbana.
-              Visualize tendências, filtre por módulos e compreenda o escopo completo do projeto.
-            </p>
-            
-            <div className="flex flex-wrap gap-4 pt-4">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
-                <FileText className="h-5 w-5 text-blue-400" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Funcionais</span>
-                  <span className="font-bold">{stats.total} Requisitos</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
-                <BarChart3 className="h-5 w-5 text-purple-400" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Não Funcionais</span>
-                  <span className="font-bold">{stats.rnf} Requisitos</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border/50 shadow-sm">
-                <Filter className="h-5 w-5 text-emerald-400" />
-                <div className="flex flex-col">
-                  <span className="text-xs text-muted-foreground">Novos/Revisados</span>
-                  <span className="font-bold text-emerald-400">+{stats.new} Itens</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Controls & Filters */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between sticky top-20 z-40 py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 md:mx-0 md:px-0 border-b md:border-none border-border/40">
-          <div className="w-full md:w-auto overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-            <div className="flex gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
-                    selectedCategory === cat
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                      : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar requisitos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-4 rounded-full bg-secondary/30 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm"
-            />
-          </div>
+        <div className="text-center mb-12 space-y-4">
+          <h1 className="text-4xl font-bold tracking-tight">
+            Bem-vindo ao EcoBike System
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Gerencie suas compras, aluguéis de veículos e manutenções em um só lugar
+          </p>
         </div>
 
-        {/* Content Grid */}
-        <Tabs defaultValue="funcionais" className="space-y-8">
-          <TabsList className="bg-secondary/30 p-1 rounded-xl border border-border/40">
-            <TabsTrigger value="funcionais" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Requisitos Funcionais</TabsTrigger>
-            <TabsTrigger value="nao-funcionais" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">Não Funcionais (RNF)</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="funcionais" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-[minmax(200px,auto)]">
-              {filteredReqs.map((req, index) => (
-                <RequirementCard key={req.id} req={req} index={index} />
-              ))}
-            </div>
-            {filteredReqs.length === 0 && (
-              <div className="text-center py-20 text-muted-foreground">
-                <p>Nenhum requisito encontrado para os filtros selecionados.</p>
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <ShoppingCart className="h-6 w-6 text-primary" />
               </div>
-            )}
-          </TabsContent>
+              <CardTitle>E-commerce</CardTitle>
+              <CardDescription>
+                Compre peças, acessórios e veículos online com entrega ou retirada na loja
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" disabled>
+                Em breve
+              </Button>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="nao-funcionais">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {nonFunctionalRequirements.map((rnf, index) => (
-                <motion.div
-                  key={rnf.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex gap-4 p-6 rounded-2xl border border-border/50 bg-card/30 hover:bg-card/50 transition-colors"
-                >
-                  <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center shrink-0 border border-border">
-                    <span className="font-bold text-primary">{rnf.id.split(' ')[1]}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">{rnf.category}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{rnf.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Bike className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Aluguel de Veículos</CardTitle>
+              <CardDescription>
+                Alugue bicicletas, patinetes e e-bikes em Utinga
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" disabled>
+                Em breve
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Wrench className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Manutenção</CardTitle>
+              <CardDescription>
+                Agende manutenções e acompanhe orçamentos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" disabled>
+                Em breve
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Info Section */}
+        <div className="mt-16 max-w-3xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Módulo de Usuários Implementado ✅</CardTitle>
+              <CardDescription>
+                Funcionalidades disponíveis na versão atual
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                <p className="text-sm">RF 1.1: Cadastro de Cliente com CPF, Telefone e Foto</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                <p className="text-sm">RF 1.3: Login e Gestão de Perfil</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
+                <p className="text-sm">RF 1.5: Gestão de Endereços (criar, listar, deletar)</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/40 bg-secondary/20 py-12 mt-12">
-        <div className="container flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-muted-foreground">
-          <p>© 2024 RequisitosViewer. Documentação confidencial.</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">Termos</a>
-            <a href="#" className="hover:text-primary transition-colors">Privacidade</a>
-            <a href="#" className="hover:text-primary transition-colors">Suporte</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
