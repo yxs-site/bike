@@ -15,7 +15,7 @@ import {
   IUser,
   UserModel,
 } from "./models";
-import { cleanNumber } from "./validators";
+import { cleanNumber } from "../shared/validators";
 
 const MONGO_URI = process.env.MONGO_URI;
 

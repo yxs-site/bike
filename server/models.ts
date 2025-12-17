@@ -1,7 +1,7 @@
 // server/models.ts
 
 import { Schema, model, connect, Document } from "mongoose";
-import { isValidCPF, isValidEmail, isValidPhone, cleanNumber } from "./validators";
+import { isValidCPF, isValidEmail, isValidPhone, cleanNumber } from "../shared/validators";
 
 // --- Interfaces para Tipagem (Opcional, mas recomendado) ---
 

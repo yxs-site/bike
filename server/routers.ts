@@ -1,5 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
-import { isValidCPF, isValidEmail, isValidPhone, cleanNumber } from "./validators";
+import { isValidCPF, isValidEmail, isValidPhone, cleanNumber } from "../shared/validators";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
