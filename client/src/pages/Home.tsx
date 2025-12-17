@@ -1,13 +1,14 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Bike, Loader2, ShoppingCart, User, Wrench } from "lucide-react";
+import { Bike, ShoppingCart, MapPin, Wrench, Lock } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Home() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { data: user, isLoading: loading } = trpc.auth.me.useQuery();
+  const logoutMutation = trpc.auth.logout.useMutation();
+  const isAuthenticated = !!user;
   const [, setLocation] = useLocation();
 
   const { data: client, isLoading: clientLoading } = trpc.clients.getMyProfile.useQuery(
@@ -18,11 +19,12 @@ export default function Home() {
   if (loading || clientLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
+  // Não autenticado - Mostrar tela de boas-vindas
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
@@ -44,27 +46,32 @@ export default function Home() {
             >
               Entrar no Sistema
             </Button>
-            <p className="text-xs text-center text-muted-foreground">
-              Faça login para acessar o sistema
-            </p>
+            <Button
+              onClick={() => setLocation("/register-client")}
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              Criar Conta
+            </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Usuário autenticado mas sem perfil de cliente
+  // Autenticado mas sem perfil de cliente
   if (!client) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-secondary/20">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-8 w-8 text-primary" />
+              <Bike className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle>Bem-vindo, {user?.name}!</CardTitle>
-            <CardDescription>
-              Complete seu cadastro para começar a usar o EcoBike System
+            <CardTitle className="text-3xl">Bem-vindo, {user?.name}!</CardTitle>
+            <CardDescription className="text-base">
+              Complete seu cadastro para começar a usar o AARON BIKE
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -76,9 +83,10 @@ export default function Home() {
               Completar Cadastro
             </Button>
             <Button
-              onClick={() => logout()}
+              onClick={() => logoutMutation.mutate()}
               variant="outline"
               className="w-full"
+              size="lg"
             >
               Sair
             </Button>
@@ -88,7 +96,7 @@ export default function Home() {
     );
   }
 
-  // Usuário autenticado com perfil completo
+  // Autenticado com perfil de cliente - Dashboard
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -103,10 +111,9 @@ export default function Home() {
               {user?.name}
             </span>
             <Button variant="outline" size="sm" onClick={() => setLocation("/profile")}>
-              <User className="mr-2 h-4 w-4" />
               Meu Perfil
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => logout()}>
+            <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
               Sair
             </Button>
           </div>
@@ -120,33 +127,37 @@ export default function Home() {
             Bem-vindo ao AARON BIKE
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Gerencie suas compras, aluguéis de bicicletas e manutenções em um só lugar
-            </p>
+            Gerencie suas compras, aluguéis de bicicletas e manutenções em um só lugar
+          </p>
         </div>
 
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <ShoppingCart className="h-6 w-6 text-primary" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <CardTitle>E-commerce</CardTitle>
+              <CardTitle>Loja Online</CardTitle>
               <CardDescription>
-                Compre peças, acessórios e veículos online com entrega ou retirada na loja
+                Compre peças e acessórios para suas bicicletas
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled>
-                Em breve
+              <Button className="w-full" onClick={() => window.location.href = '/products'}>
+                Ver Produtos
               </Button>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Bike className="h-6 w-6 text-primary" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-primary" />
+                </div>
               </div>
               <CardTitle>Aluguel de Veículos</CardTitle>
               <CardDescription>
@@ -155,53 +166,59 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <Button className="w-full" disabled>
-                Em breve
+                Em Desenvolvimento
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow border-primary/20 bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Lock className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+              <CardTitle>Painel Administrativo</CardTitle>
+              <CardDescription>
+                Gerenciar produtos e pedidos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => window.location.href = '/admin'}>
+                Acessar Admin
               </Button>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Wrench className="h-6 w-6 text-primary" />
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Wrench className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <CardTitle>Manutenção</CardTitle>
+              <CardTitle>Agendamento de Manutenção</CardTitle>
               <CardDescription>
-                Agende manutenções e acompanhe orçamentos
+                Agende manutenções para suas bicicletas
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" disabled>
-                Em breve
+                Em Desenvolvimento
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Info Section */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Módulo de Usuários Implementado ✅</CardTitle>
-              <CardDescription>
-                Funcionalidades disponíveis na versão atual
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-start gap-2">
-                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                <p className="text-sm">RF 1.1: Cadastro de Cliente com CPF, Telefone e Foto</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                <p className="text-sm">RF 1.3: Login e Gestão de Perfil</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                <p className="text-sm">RF 1.5: Gestão de Endereços (criar, listar, deletar)</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mt-16 pt-8 border-t">
+          <div className="max-w-3xl mx-auto text-center space-y-4">
+            <h2 className="text-2xl font-bold">Sobre AARON BIKE</h2>
+            <p className="text-muted-foreground">
+              Sistema integrado de gestão para bicicletas, oferecendo soluções completas
+              em e-commerce, loja física e mobilidade urbana em Utinga.
+            </p>
+          </div>
         </div>
       </main>
     </div>

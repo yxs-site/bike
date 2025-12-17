@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO admins (username, password, email, name, active) VALUES ('arthurmota', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'arthur@aaronbike.com', 'Arthur Mota', 1)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2mJHf2mrQ6cJQLE.root --database eWVDLjFcyUBoUEGjb4Cpmp --execute INSERT INTO admins (username, password, email, name, active) VALUES ('arthurmota', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'arthur@aaronbike.com', 'Arthur Mota', 1)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 987
+}

@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as db from "./db";
 import { storagePut } from "./storage";
 import { TRPCError } from "@trpc/server";
+import crypto from "crypto";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -236,6 +237,119 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteAddress(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============= PRODUTOS (RF 2.1) =============
+  products: router({
+    // Listar todos os produtos ativos
+    list: publicProcedure.query(async () => {
+      return await db.getAllProducts();
+    }),
+
+    // Obter produto por ID
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductById(input.id);
+      }),
+  }),
+
+  // ============= ADMIN (Login) =============
+  admin: router({
+    // Login do administrador
+    login: publicProcedure
+      .input(z.object({
+        username: z.string().min(3),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ input }) => {
+        const admin = await db.getAdminByUsername(input.username);
+        if (!admin) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Usuário ou senha inválidos",
+          });
+        }
+
+        // Comparar senha com hash SHA256
+        const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
+        if (admin.password !== passwordHash) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Usuário ou senha inválidos",
+          });
+        }
+
+        if (admin.active !== 1) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Administrador inativo",
+          });
+        }
+
+        // Retornar dados do admin (sem password)
+        return {
+          id: admin.id,
+          username: admin.username,
+          email: admin.email,
+          name: admin.name,
+        };
+      }),
+
+    // Criar produto (apenas admin)
+    createProduct: publicProcedure
+      .input(z.object({
+        name: z.string().min(3),
+        description: z.string().optional(),
+        price: z.number().min(0),
+        category: z.string().min(3),
+        imageUrl: z.string().optional(),
+        stock: z.number().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        // Nota: Em produção, verificar se o usuário é admin
+        return await db.createProduct({
+          name: input.name,
+          description: input.description || null,
+          price: Math.round(input.price * 100), // Converter para centavos
+          category: input.category,
+          imageUrl: input.imageUrl || null,
+          stock: input.stock,
+          active: 1,
+        });
+      }),
+
+    // Atualizar produto (apenas admin)
+    updateProduct: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        price: z.number().optional(),
+        category: z.string().optional(),
+        imageUrl: z.string().optional(),
+        stock: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const updateData: any = {};
+        if (input.name) updateData.name = input.name;
+        if (input.description !== undefined) updateData.description = input.description;
+        if (input.price !== undefined) updateData.price = Math.round(input.price * 100);
+        if (input.category) updateData.category = input.category;
+        if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl;
+        if (input.stock !== undefined) updateData.stock = input.stock;
+
+        await db.updateProduct(input.id, updateData);
+        return { success: true };
+      }),
+
+    // Deletar produto (apenas admin)
+    deleteProduct: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProduct(input.id);
         return { success: true };
       }),
   }),

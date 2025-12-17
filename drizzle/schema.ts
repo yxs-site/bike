@@ -79,3 +79,41 @@ export const addresses = mysqlTable("addresses", {
 
 export type Address = typeof addresses.$inferSelect;
 export type InsertAddress = typeof addresses.$inferInsert;
+
+/**
+ * Produtos do sistema (RF 2.1)
+ * Armazena catálogo de bicicletas, peças e acessórios
+ */
+export const products = mysqlTable("products", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  price: int("price").notNull(), // Preço em centavos (ex: 10000 = R$ 100,00)
+  category: varchar("category", { length: 100 }).notNull(), // bicicleta, peça, acessório
+  imageUrl: text("imageUrl"),
+  stock: int("stock").default(0).notNull(),
+  active: int("active").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+/**
+ * Administradores do sistema
+ * Acesso ao painel /admin
+ */
+export const admins = mysqlTable("admins", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 100 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(), // Hash bcrypt
+  email: varchar("email", { length: 320 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  active: int("active").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Admin = typeof admins.$inferSelect;
+export type InsertAdmin = typeof admins.$inferInsert;

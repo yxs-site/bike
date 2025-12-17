@@ -43,3 +43,13 @@
 
 ## Atualizações Gerais
 - [x] Atualizar nome do sistema de "EcoBike System" para "AARON BIKE"
+
+
+## Fase 2: Módulo de Produtos e Admin (RF 2.1)
+- [ ] Criar tabela de produtos no banco de dados
+- [ ] Criar tabela de admin/login no banco de dados
+- [ ] Implementar API de listagem de produtos
+- [ ] Implementar autenticação de admin (arthurmota / 123456)
+- [ ] Criar página de catálogo de produtos para clientes
+- [ ] Criar painel administrativo (/admin)
+- [ ] Implementar CRUD de produtos no admin

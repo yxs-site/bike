@@ -4,7 +4,9 @@ import {
   InsertUser, users, 
   InsertClient, clients, Client,
   InsertEmployee, employees, Employee,
-  InsertAddress, addresses, Address
+  InsertAddress, addresses, Address,
+  InsertProduct, products, Product,
+  InsertAdmin, admins, Admin
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -208,4 +210,56 @@ export async function deleteAddress(id: number): Promise<void> {
   if (!db) throw new Error("Database not available");
 
   await db.delete(addresses).where(eq(addresses.id, id));
+}
+
+// ============= PRODUTOS (RF 2.1) =============
+
+export async function getAllProducts(): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(products).where(eq(products.active, 1));
+}
+
+export async function getProductById(id: number): Promise<Product | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [product] = await db.select().from(products).where(eq(products.id, id)).limit(1);
+  return product;
+}
+
+export async function createProduct(data: InsertProduct): Promise<Product> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(products).values(data) as any;
+  const [newProduct] = await db.select().from(products).where(eq(products.id, Number(result.insertId)));
+  
+  if (!newProduct) throw new Error("Failed to create product");
+  return newProduct;
+}
+
+export async function updateProduct(id: number, data: Partial<InsertProduct>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(products).set(data).where(eq(products.id, id));
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(products).where(eq(products.id, id));
+}
+
+// ============= ADMIN (Login) =============
+
+export async function getAdminByUsername(username: string): Promise<Admin | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [admin] = await db.select().from(admins).where(eq(admins.username, username)).limit(1);
+  return admin;
 }
