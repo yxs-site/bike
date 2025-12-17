@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { isValidCPF, isValidEmail, isValidPhone, cleanNumber } from "./validators";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -27,7 +28,7 @@ export const appRouter = router({
     // Login de cliente
     login: publicProcedure
       .input(z.object({
-        email: z.string().email(),
+        email: z.string().refine(isValidEmail, { message: "Email inválido" }),
         password: z.string().min(6),
       }))
       .mutation(async ({ input }) => {
@@ -50,7 +51,7 @@ export const appRouter = router({
 
         // Retornar dados do cliente (sem password)
         return {
-          id: client.id,
+          id: client._id,
           email: client.email,
           name: client.name,
         };
@@ -60,9 +61,9 @@ export const appRouter = router({
     signup: publicProcedure
       .input(z.object({
         name: z.string().min(3),
-        email: z.string().email(),
-        phone: z.string().min(10),
-        cpf: z.string().length(14),
+        email: z.string().refine(isValidEmail, { message: "Email inválido" }),
+        phone: z.string().refine(isValidPhone, { message: "Telefone inválido" }),
+        cpf: z.string().refine(cpf => isValidCPF(cpf) && cleanNumber(cpf).length === 11, { message: "CPF inválido" }),
         password: z.string().min(6),
         confirmPassword: z.string().min(6),
       }))
@@ -106,7 +107,7 @@ export const appRouter = router({
         });
 
         return {
-          id: client.id,
+          id: client._id,
           email: client.email,
           name: client.name,
         };
@@ -115,8 +116,8 @@ export const appRouter = router({
     // Criar perfil de cliente
     create: protectedProcedure
       .input(z.object({
-        cpf: z.string().length(14, "CPF deve ter 14 caracteres (com pontuação)"),
-        phone: z.string().min(10, "Telefone inválido"),
+        cpf: z.string().refine(cpf => isValidCPF(cpf) && cleanNumber(cpf).length === 11, { message: "CPF inválido" }),
+        phone: z.string().refine(isValidPhone, { message: "Telefone inválido" }),
         photoBase64: z.string().optional(), // Base64 da foto
       }))
       .mutation(async ({ ctx, input }) => {
@@ -157,7 +158,7 @@ export const appRouter = router({
         }
 
         const client = await db.createClient({
-          userId: ctx.user.id,
+          userId: ctx.user.id as any, // ctx.user.id é o ObjectId do User (string)
           name: ctx.user.name || "Cliente",
           email: ctx.user.email || "",
           cpf: input.cpf,
@@ -177,7 +178,7 @@ export const appRouter = router({
     // Atualizar perfil do cliente
     updateProfile: protectedProcedure
       .input(z.object({
-        phone: z.string().min(10).optional(),
+        phone: z.string().refine(phone => !phone || isValidPhone(phone), { message: "Telefone inválido" }).optional(),
         photoBase64: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -199,7 +200,7 @@ export const appRouter = router({
           updateData.photoUrl = url;
         }
 
-        await db.updateClient(client.id, updateData);
+        await db.updateClient(client._id, updateData);
         return { success: true };
       }),
   }),
@@ -209,9 +210,9 @@ export const appRouter = router({
     // Criar perfil de funcionário (apenas admin pode criar)
     create: protectedProcedure
       .input(z.object({
-        userId: z.number(),
-        cpf: z.string().length(14),
-        phone: z.string().min(10),
+        userId: z.string(), // O ID do usuário agora é um ObjectId (string)
+        cpf: z.string().refine(cpf => isValidCPF(cpf) && cleanNumber(cpf).length === 11, { message: "CPF inválido" }),
+        phone: z.string().refine(isValidPhone, { message: "Telefone inválido" }),
       }))
       .mutation(async ({ ctx, input }) => {
         // Verificar se usuário é admin
@@ -231,7 +232,11 @@ export const appRouter = router({
           });
         }
 
-        const employee = await db.createEmployee(input);
+        const employee = await db.createEmployee({
+          userId: input.userId as any,
+          cpf: cleanNumber(input.cpf),
+          phone: cleanNumber(input.phone),
+        });
         return employee;
       }),
 
@@ -246,7 +251,7 @@ export const appRouter = router({
     // Criar novo endereço
     create: protectedProcedure
       .input(z.object({
-        cep: z.string().length(9, "CEP deve ter 9 caracteres (com hífen)"),
+        cep: z.string().min(8).max(10, "CEP inválido"), // Validação mais flexível, a validação de formato deve ser no frontend
         street: z.string().min(3, "Rua inválida"),
         number: z.string().min(1, "Número inválido"),
         neighborhood: z.string().min(3, "Bairro inválido"),
@@ -265,7 +270,7 @@ export const appRouter = router({
         }
 
         const address = await db.createAddress({
-          clientId: client.id,
+          clientId: client._id,
           cep: input.cep,
           street: input.street,
           number: input.number,
@@ -284,13 +289,13 @@ export const appRouter = router({
       const client = await db.getClientByUserId(ctx.user.id);
       if (!client) return [];
 
-      return await db.getAddressesByClientId(client.id);
+      return await db.getAddressesByClientId(client._id);
     }),
 
     // Atualizar endereço
     update: protectedProcedure
       .input(z.object({
-        id: z.number(),
+        id: z.string(),
         cep: z.string().optional(),
         street: z.string().optional(),
         number: z.string().optional(),
@@ -319,15 +324,15 @@ export const appRouter = router({
         if (input.complement !== undefined) updateData.complement = input.complement;
         if (input.isDefault !== undefined) updateData.isDefault = input.isDefault ? 1 : 0;
 
-        await db.updateAddress(input.id, updateData);
+        await db.updateAddress(input.id as any, updateData);
         return { success: true };
       }),
 
     // Deletar endereço
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        await db.deleteAddress(input.id);
+        await db.deleteAddress(input.id as any);
         return { success: true };
       }),
   }),
@@ -341,7 +346,7 @@ export const appRouter = router({
 
     // Obter produto por ID
     getById: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .query(async ({ input }) => {
         return await db.getProductById(input.id);
       }),
@@ -415,7 +420,7 @@ export const appRouter = router({
     // Atualizar produto (apenas admin)
     updateProduct: publicProcedure
       .input(z.object({
-        id: z.number(),
+        id: z.string(),
         name: z.string().optional(),
         description: z.string().optional(),
         price: z.number().optional(),
@@ -432,15 +437,15 @@ export const appRouter = router({
         if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl;
         if (input.stock !== undefined) updateData.stock = input.stock;
 
-        await db.updateProduct(input.id, updateData);
+        await db.updateProduct(input.id as any, updateData);
         return { success: true };
       }),
 
     // Deletar produto (apenas admin)
     deleteProduct: publicProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.string() }))
       .mutation(async ({ input }) => {
-        await db.deleteProduct(input.id);
+        await db.deleteProduct(input.id as any);
         return { success: true };
       }),
   }),
