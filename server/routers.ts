@@ -24,6 +24,94 @@ export const appRouter = router({
 
   // ============= CLIENTES (RF 1.1) =============
   clients: router({
+    // Login de cliente
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ input }) => {
+        const client = await db.getClientByEmail(input.email);
+        if (!client) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Email ou senha inválidos",
+          });
+        }
+
+        // Comparar senha com hash SHA256
+        const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
+        if (client.password !== passwordHash) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Email ou senha inválidos",
+          });
+        }
+
+        // Retornar dados do cliente (sem password)
+        return {
+          id: client.id,
+          email: client.email,
+          name: client.name,
+        };
+      }),
+
+    // Signup de cliente
+    signup: publicProcedure
+      .input(z.object({
+        name: z.string().min(3),
+        email: z.string().email(),
+        phone: z.string().min(10),
+        cpf: z.string().length(14),
+        password: z.string().min(6),
+        confirmPassword: z.string().min(6),
+      }))
+      .mutation(async ({ input }) => {
+        // Validar senhas
+        if (input.password !== input.confirmPassword) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "As senhas não conferem",
+          });
+        }
+
+        // Verificar se email já existe
+        const existingEmail = await db.getClientByEmail(input.email);
+        if (existingEmail) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Email já cadastrado",
+          });
+        }
+
+        // Verificar se CPF já existe
+        const existingCpf = await db.getClientByCpf(input.cpf);
+        if (existingCpf) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "CPF já cadastrado",
+          });
+        }
+
+        // Hash da senha
+        const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
+
+        // Criar cliente
+        const client = await db.createClientDirect({
+          name: input.name,
+          email: input.email,
+          phone: input.phone,
+          cpf: input.cpf,
+          password: passwordHash,
+        });
+
+        return {
+          id: client.id,
+          email: client.email,
+          name: client.name,
+        };
+      }),
+
     // Criar perfil de cliente
     create: protectedProcedure
       .input(z.object({
@@ -70,8 +158,11 @@ export const appRouter = router({
 
         const client = await db.createClient({
           userId: ctx.user.id,
+          name: ctx.user.name || "Cliente",
+          email: ctx.user.email || "",
           cpf: input.cpf,
           phone: input.phone,
+          password: "", // Senha vazia para usuários OAuth
           photoUrl,
         });
 

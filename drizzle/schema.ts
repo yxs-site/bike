@@ -31,9 +31,12 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const clients = mysqlTable("clients", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: int("userId").references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
   cpf: varchar("cpf", { length: 14 }).notNull().unique(),
   phone: varchar("phone", { length: 20 }).notNull(),
+  password: varchar("password", { length: 255 }).notNull(), // Hash SHA256
   photoUrl: text("photoUrl"), // URL da foto no S3
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

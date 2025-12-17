@@ -263,3 +263,46 @@ export async function getAdminByUsername(username: string): Promise<Admin | unde
   const [admin] = await db.select().from(admins).where(eq(admins.username, username)).limit(1);
   return admin;
 }
+
+
+export async function getClientByEmail(email: string): Promise<Client | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get client: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(clients).where(eq(clients.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createClientDirect(data: {
+  name: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  password: string;
+}): Promise<Client> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db.insert(clients).values({
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    cpf: data.cpf,
+    password: data.password,
+    userId: null, // Não vinculado a usuário OAuth
+  } as InsertClient);
+
+  const insertId = (result as any).insertId;
+  const client = await db.select().from(clients).where(eq(clients.id, insertId)).limit(1);
+  
+  if (!client || client.length === 0) {
+    throw new Error("Failed to create client");
+  }
+
+  return client[0];
+}

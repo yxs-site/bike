@@ -46,10 +46,16 @@
 
 
 ## Fase 2: Módulo de Produtos e Admin (RF 2.1)
-- [ ] Criar tabela de produtos no banco de dados
-- [ ] Criar tabela de admin/login no banco de dados
-- [ ] Implementar API de listagem de produtos
-- [ ] Implementar autenticação de admin (arthurmota / 123456)
-- [ ] Criar página de catálogo de produtos para clientes
-- [ ] Criar painel administrativo (/admin)
+- [x] Criar tabela de produtos no banco de dados
+- [x] Criar tabela de admin/login no banco de dados
+- [x] Implementar API de listagem de produtos
+- [x] Implementar autenticação de admin (arthurmota / 123456)
+- [x] Criar página de catálogo de produtos para clientes
+- [x] Criar painel administrativo (/admin)
 - [ ] Implementar CRUD de produtos no admin
+
+## Fase 3: Autenticação Completa (Login/Cadastro de Clientes)
+- [x] Criar página de Login para clientes (email + senha)
+- [x] Criar página de Cadastro com todos os campos (nome, email, telefone, CPF, senha, confirmar senha)
+- [x] Implementar APIs de autenticação (login/signup)
+- [x] Atualizar Home com links corretos para Login e Cadastro
