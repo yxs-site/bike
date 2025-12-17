@@ -39,3 +39,7 @@
 - [ ] RF 6.3: Configuração Geofence
 - [ ] RF 6.4: Configuração de Tarifas
 - [ ] RF 6.5: Gestão de Estações
+
+
+## Atualizações Gerais
+- [x] Atualizar nome do sistema de "EcoBike System" para "AARON BIKE"

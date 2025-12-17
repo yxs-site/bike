@@ -107,7 +107,7 @@ export default function ClientProfile() {
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container flex h-16 items-center justify-between">
-          <h1 className="text-xl font-bold">EcoBike System</h1>
+          <h1 className="text-xl font-bold">AARON BIKE</h1>
           <Button variant="outline" onClick={() => logout()}>
             Sair
           </Button>

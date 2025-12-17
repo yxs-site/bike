@@ -31,7 +31,7 @@ export default function Home() {
             <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <Bike className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl">EcoBike System</CardTitle>
+            <CardTitle className="text-3xl">AARON BIKE</CardTitle>
             <CardDescription className="text-base">
               Sistema de Gestão Integrada: E-commerce, Loja Física e Mobilidade Urbana
             </CardDescription>
@@ -96,7 +96,7 @@ export default function Home() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Bike className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">EcoBike System</span>
+            <span className="font-bold text-xl">AARON BIKE</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground hidden sm:inline">
@@ -117,11 +117,11 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-12 space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">
-            Bem-vindo ao EcoBike System
+            Bem-vindo ao AARON BIKE
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Gerencie suas compras, aluguéis de veículos e manutenções em um só lugar
-          </p>
+              Gerencie suas compras, aluguéis de bicicletas e manutenções em um só lugar
+            </p>
         </div>
 
         {/* Feature Cards */}
@@ -150,7 +150,7 @@ export default function Home() {
               </div>
               <CardTitle>Aluguel de Veículos</CardTitle>
               <CardDescription>
-                Alugue bicicletas, patinetes e e-bikes em Utinga
+                Alugue bicicletas e patinetes em Utinga
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -84,7 +84,7 @@ export default function RegisterClient() {
         <CardHeader>
           <CardTitle className="text-2xl">Cadastro de Cliente</CardTitle>
           <CardDescription>
-            Complete seu perfil para acessar todos os recursos do EcoBike System
+            Complete seu perfil para acessar todos os recursos do AARON BIKE
           </CardDescription>
         </CardHeader>
         <CardContent>
